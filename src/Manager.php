@@ -332,7 +332,7 @@ class Manager
          *
          * https://github.com/barryvdh/laravel-translation-manager/blob/master/src/Manager.php
          */
-        $functions = ['__', 'trans', 'trans_choice', 'Lang::get', 'Lang::choice', 'Lang::trans', 'Lang::transChoice', '@lang', '@choice'];
+        $functions = ['__', 'trans', 'trans_choice', 'Lang::get', 'Lang::choice', 'Lang::trans', 'Lang::transChoice', '@lang', '@choice' , '$t' ,'this.$t'];
 
         $pattern =
             // See https://regex101.com/r/jS5fX0/4
