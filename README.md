@@ -116,6 +116,21 @@ php artisan langman:sync
 This command will look into all files in `resources/views` and `app` and find all translation keys that are not covered in your translation files, after
 that it appends those keys to the files with a value equal to an empty string.
 
+--generate option
+
+```
+php artisan langman:sync --generate
+```
+The generate option will create generic (title case) language transalations from the keys. `__('app.user_name')` will create a key in your app.php language files like this, 'user_name'=>'User Name'
+
+
+--delete option
+
+```
+php artisan langman:sync --delete
+```
+The delete option remove any unused  keys from the transalation language files , keeping the language file lean, especially if you had to pay transalation , this ensures you dont waster money on unsed transalation strings!'
+
 ### Filling missing translations
 
 ```

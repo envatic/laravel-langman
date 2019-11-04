@@ -13,7 +13,7 @@ class SyncCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'langman:sync';
+    protected $signature = 'langman:sync {--generate} {--delete}';
 
     /**
      * The description of the console command.
@@ -52,6 +52,9 @@ class SyncCommand extends Command
         $translationFiles = $this->manager->files();
 
         $this->syncKeysFromFiles($translationFiles);
+		
+		if($this->option('delete'))
+			 $this->syncKeysToFiles($translationFiles);
 
         $this->syncKeysBetweenLanguages($translationFiles);
 
@@ -90,6 +93,57 @@ class SyncCommand extends Command
             }
         }
     }
+	
+	/**
+     * Synchronize keys missing in project files but found in languages.
+     *
+     * @param $translationFiles
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+     * @return void
+     */
+	private function syncKeysToFiles($translationFiles)
+    {
+        $this->info('Reading translation keys from files...');
+		
+        // An array of all translation keys as found in project files.
+        $allKeysInFiles = $this->manager->collectFromFiles();
+		
+        foreach ($translationFiles as $fileName => $languages) {
+            foreach ($languages as $languageKey => $path) {
+                $fileContent = $this->manager->getFileContent($path);
+				
+                if (isset($allKeysInFiles[$fileName])) {
+                    $excessKeys = array_diff(array_keys(array_dot($fileContent)),$allKeysInFiles[$fileName]);
+					
+                    foreach ($excessKeys as $i => $excessKey) {
+                        if (Arr::has($allKeysInFiles[$fileName], $excessKey)) {
+                            unset($excessKeys[$i]);
+                        }
+                    }
+					
+                    $this->removeExcessKeys($fileName, $excessKeys, $languageKey);
+                }
+				
+            }
+        }
+    }
+	
+	/**
+     * Remove unused excess keys with an empty string in the given file.
+     *
+     * @param string $fileName
+     * @param array $foundExcessKeys
+     * @param string $languageKey
+     * @return void
+     */
+    private function removeExcessKeys($fileName, array $foundExcessKeys, $languageKey)
+    {
+        $excessKeys = [];
+        foreach ($foundExcessKeys as $excessKey) {
+            $this->output->writeln("\"<fg=yellow>{$fileName}.{$excessKey}.{$languageKey}</>\" was removed.");
+        }
+        $this->manager->removeKeys( $fileName, $excessKeys );
+    }
 
     /**
      * Fill the missing keys with an empty string in the given file.
@@ -104,7 +158,8 @@ class SyncCommand extends Command
         $missingKeys = [];
 
         foreach ($foundMissingKeys as $missingKey) {
-            $missingKeys[$missingKey] = [$languageKey => ''];
+			$generic = $this->option('generate')? Str::title(str_replace('_',' ',$missingKey)):'';
+            $missingKeys[$missingKey] = [$languageKey => $generic];
 
             $this->output->writeln("\"<fg=yellow>{$fileName}.{$missingKey}.{$languageKey}</>\" was added.");
         }

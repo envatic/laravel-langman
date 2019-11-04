@@ -193,6 +193,30 @@ class Manager
             $this->writeFile($filePath, $fileContent);
         }
     }
+	
+	
+	/**
+     * Remove keys from all language files.
+     *
+     * @param string $fileName
+     * @param array $keys
+     * @return void
+     */
+    public function removeKeys($fileName, $keys)
+    {
+        foreach ($this->languages() as $language) {
+            $filePath = $this->path."/{$language}/{$fileName}.php";
+
+            $fileContent = $this->getFileContent($filePath);
+			
+			foreach($keys as $key){
+				Arr::forget($fileContent, $key);
+			}
+
+            $this->writeFile($filePath, $fileContent);
+        }
+    }
+
 
     /**
      * Write a language file from array.
