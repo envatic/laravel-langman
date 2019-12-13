@@ -54,14 +54,15 @@ class Manager
     public function files()
     {
         $files = Collection::make($this->disk->allFiles($this->path))->filter(function ($file) {
-            return $this->disk->extension($file) == 'php';
+            return in_array($this->disk->extension($file),['php','vue']);
         });
+
 
         $filesByFile = $files->groupBy(function ($file) {
             $fileName = $file->getBasename('.'.$file->getExtension());
 
             if (Str::contains($file->getPath(), 'vendor')) {
-                $fileName = str_replace('.php', '', $file->getFileName());
+                $fileName = str_replace(['.php','vue'], '', $file->getFileName());
 
                 $packageName = basename(dirname($file->getPath()));
 
@@ -206,13 +207,11 @@ class Manager
     {
         foreach ($this->languages() as $language) {
             $filePath = $this->path."/{$language}/{$fileName}.php";
-
             $fileContent = $this->getFileContent($filePath);
-			
 			foreach($keys as $key){
 				Arr::forget($fileContent, $key);
 			}
-
+			
             $this->writeFile($filePath, $fileContent);
         }
     }
@@ -298,7 +297,7 @@ class Manager
     public function collectFromFiles()
     {
         $translationKeys = [];
-
+		$x = $this->getAllViewFilesWithTranslations();
         foreach ($this->getAllViewFilesWithTranslations() as $file => $matches) {
             foreach ($matches as $key) {
                 try {
@@ -332,7 +331,7 @@ class Manager
          *
          * https://github.com/barryvdh/laravel-translation-manager/blob/master/src/Manager.php
          */
-        $functions = ['__', 'trans', 'trans_choice', 'Lang::get', 'Lang::choice', 'Lang::trans', 'Lang::transChoice', '@lang', '@choice' , '$t' ,'this.$t'];
+        $functions = ['__', 'trans', 'trans_choice', 'Lang::get', 'Lang::choice', 'Lang::trans', 'Lang::transChoice', '@lang', '@choice' , '\$t' ,'this.\$t'];
 
         $pattern =
             // See https://regex101.com/r/jS5fX0/4
@@ -350,14 +349,21 @@ class Manager
         ;
 
         $allMatches = [];
+        $gk = [];
 
         /** @var \Symfony\Component\Finder\SplFileInfo $file */
-        foreach ($this->disk->allFiles($this->syncPaths) as $file) {
+		
+        foreach ($this->disk->allFiles(base_path('resources/js/components')) as $file) {
+			$gk[]=$file->getRelativePathname();
             if (preg_match_all("/$pattern/siU", $file->getContents(), $matches)) {
                 $allMatches[$file->getRelativePathname()] = $matches[2];
             }
         }
-
+		 foreach ($this->disk->allFiles($this->syncPaths) as $file) {
+            if (preg_match_all("/$pattern/siU", $file->getContents(), $matches)) {
+                $allMatches[$file->getRelativePathname()] = $matches[2];
+            }
+        }
         return $allMatches;
     }
 

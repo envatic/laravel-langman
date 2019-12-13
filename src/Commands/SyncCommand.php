@@ -4,6 +4,7 @@ namespace Themsaid\Langman\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Themsaid\Langman\Manager;
 
 class SyncCommand extends Command
@@ -74,7 +75,7 @@ class SyncCommand extends Command
 
         // An array of all translation keys as found in project files.
         $allKeysInFiles = $this->manager->collectFromFiles();
-
+	
         foreach ($translationFiles as $fileName => $languages) {
             foreach ($languages as $languageKey => $path) {
                 $fileContent = $this->manager->getFileContent($path);
@@ -138,11 +139,10 @@ class SyncCommand extends Command
      */
     private function removeExcessKeys($fileName, array $foundExcessKeys, $languageKey)
     {
-        $excessKeys = [];
         foreach ($foundExcessKeys as $excessKey) {
             $this->output->writeln("\"<fg=yellow>{$fileName}.{$excessKey}.{$languageKey}</>\" was removed.");
         }
-        $this->manager->removeKeys( $fileName, $excessKeys );
+        $this->manager->removeKeys( $fileName,$foundExcessKeys);
     }
 
     /**
